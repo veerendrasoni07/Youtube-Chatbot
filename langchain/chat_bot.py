@@ -4,6 +4,7 @@ from pytube import extract
 import os
 load_dotenv()
 from fastapi import FastAPI,HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableParallel,RunnableLambda,RunnablePassthrough
@@ -19,6 +20,13 @@ from langchain_core.output_parsers import StrOutputParser
 
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 llm = HuggingFaceEndpoint(
     repo_id="mistralai/Mistral-7B-Instruct-v0.2",
@@ -122,7 +130,9 @@ async def chat(data:ChatRequest):
         })
 
         return {
-            "result": result
+            "message": result,
+            "sessionId":data.session_id,
+            "isUser":False
         }
 
     except Exception as e:
