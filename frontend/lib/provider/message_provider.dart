@@ -8,6 +8,10 @@ class MessageProvider extends StateNotifier<List<Message>> {
     state = [...state, msg];
   }
 
+  void clearMessages() {
+    state = [];
+  }
+
 
 
 }
