@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:frontend/controller/langchain_controller.dart';
 import 'package:frontend/model/message.dart';
 import 'package:frontend/provider/message_provider.dart';
+import 'package:frontend/provider/theme_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -19,6 +22,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController linkController = TextEditingController();
   final TextEditingController chatController = TextEditingController();
   late YoutubePlayerController youtubePlayerController;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -35,17 +39,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Focus.of(context).unfocus();
       },
       child: Scaffold(
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         appBar: AppBar(
           backgroundColor: Colors.red,
-          title: Text(
-            "Youtube ChatBot",
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+          title: Row(
+            spacing: 10,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadiusGeometry.circular(10),
+                child: Image.asset(
+                  'assets/images/cognitube.png',
+                  height: 30,
+                  width: 30,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Text(
+                "Cognitube",
+                style: GoogleFonts.poppins(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
           actions: [
+            Switch(
+              value: ref.watch(themeProvider) == ThemeMode.dark,
+              focusColor: Colors.white10,
+              activeThumbColor: Colors.black,
+              activeTrackColor: Colors.white.withOpacity(0.5),
+              inactiveTrackColor: Colors.white.withOpacity(0.5),
+              inactiveThumbColor: Colors.white,
+              activeColor: Colors.white,
+              hoverColor: Colors.white10,
+              onChanged: (val) {
+                ref.read(themeProvider.notifier).toggleTheme();
+              },
+            ),
             if (sessionId != null)
               IconButton(
                 onPressed: () {
@@ -76,32 +107,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Lottie.asset(
+              'assets/animation/Cute bear dancing.json',
+              height: 80,
+              width: 80,
+            ),
+
             TextField(
               controller: linkController,
               style: GoogleFonts.boldonse(
                 fontSize: 24,
-                color: Colors.white54,
                 fontWeight: FontWeight.bold,
               ),
               decoration: InputDecoration(
                 hintText: "Paste Link Here...",
-                fillColor: Colors.red,
+                fillColor: Theme.of(context).colorScheme.surface,
                 filled: true,
-                hintStyle: GoogleFonts.boldonse(
+
+                hintStyle: GoogleFonts.montserrat(
                   fontSize: 26,
-                  color: Colors.white54,
                   fontWeight: FontWeight.bold,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(25),
                 ),
               ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
+                if (!linkController.text.contains('https://www.youtube.com/') &&
+                    !linkController.text.contains('https://youtu.be/')) {
+                  Fluttertoast.showToast(
+                    msg: "Please Paste a Valid YouTube Link",
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.TOP,
+                    timeInSecForIosWeb: 1,
+                    backgroundColor: Colors.blue,
+                    textColor: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 16.0,
+                  );
+                  return;
+                }
+                if (linkController.text.isEmpty) {
+                  Fluttertoast.showToast(
+                    msg: "Please Paste Link First",
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.TOP,
+                    timeInSecForIosWeb: 1,
+                    backgroundColor: Colors.blue,
+                    textColor: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 16.0,
+                  );
+                  return;
+                }
                 showDialog(
                   context: context,
+                  barrierDismissible: false,
                   builder: (context) {
                     return AlertDialog(
                       content: Row(
@@ -134,13 +196,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 setState(() {});
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
 
               child: Text(
                 "Submit",
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black,
                 ),
               ),
             ),
@@ -157,13 +228,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Column(
       children: [
         // Video
-        SizedBox(
-          height: size.height * 0.3,
+        Flexible(
+          flex: 3,
           child: YoutubePlayer(controller: youtubePlayerController),
         ),
 
         // Chat list
-        Expanded(
+        Flexible(
+          flex: 6,
           child: ListView.builder(
             reverse: true,
             itemCount: messages.length,
@@ -179,7 +251,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: isMe
-                        ? Colors.blue.withOpacity(0.3)
+                        ? Colors.blue.withOpacity(0.8)
                         : const Color.fromARGB(
                             255,
                             255,
@@ -189,15 +261,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: isMe
-                      ? Text(message.message)
+                      ? Text(
+                          message.message,
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        )
                       : MarkdownBody(
                           data: message.message,
+                          selectable: true,
+                          softLineBreak: true,
                           styleSheet: MarkdownStyleSheet(
                             h1: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
-                            h2: TextStyle(color: Colors.white70),
+                            h2: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimary.withOpacity(0.7),
+                            ),
                           ),
                         ),
                 ),
@@ -205,26 +289,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             },
           ),
         ),
+        if (isLoading)
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Lottie.asset(
+                  'assets/animation/Cute bear dancing.json',
+                  height: 80,
+                  width: 80,
+                ),
+              ],
+            ),
+          ),
 
         // Input
         Padding(
           padding: const EdgeInsets.all(12),
           child: TextField(
-            onSubmitted: (value) {
-              _handleSubmit(value);
-            },
+            onSubmitted: isLoading
+                ? null
+                : (value) async {
+                    if (value.trim().isEmpty) return;
+                    setState(() {
+                      isLoading = true;
+                    });
+                    await _handleSubmit(value);
+                    setState(() {
+                      isLoading = false;
+                    });
+                  },
             controller: chatController,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
+            ),
+            cursorColor: Theme.of(context).colorScheme.onPrimary,
             decoration: InputDecoration(
               hintText: "Ask something about the video...",
+              hintStyle: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
+              filled: true,
+              fillColor: Theme.of(
+                context,
+              ).colorScheme.onSurface.withOpacity(0.1),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.send),
-                onPressed: () {
-                  _handleSubmit(chatController.text);
-                  chatController.clear();
-                },
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        if (chatController.text.trim().isEmpty) return;
+                        setState(() {
+                          isLoading = true;
+                        });
+                        await _handleSubmit(chatController.text);
+                        setState(() {
+                          isLoading = false;
+                        });
+                        chatController.clear();
+                      },
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
               ),
             ),
           ),
@@ -233,7 +363,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _handleSubmit(String value) async {
+  Future<void> _handleSubmit(String value) async {
     if (sessionId == null) return;
     ref
         .read(messageProvider.notifier)
