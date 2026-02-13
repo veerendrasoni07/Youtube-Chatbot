@@ -323,7 +323,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             controller: chatController,
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
             ),
             cursorColor: Theme.of(context).colorScheme.onPrimary,
             decoration: InputDecoration(
