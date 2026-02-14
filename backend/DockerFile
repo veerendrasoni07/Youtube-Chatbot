@@ -1,0 +1,20 @@
+# Base Image 
+FROM python:3.11-slim 
+
+# set working directory inside container
+WORKDIR /app
+
+# Copy all dependencies from the local to inside container working dir 
+COPY requirement.txt .
+
+# install the dependencies 
+RUN pip install --no-cache-dir -r requirement.txt
+
+# copy all projects file
+COPY . .
+
+# Command to run when docker starts running 
+CMD [ "uvicorn","chat_bot:app","--host", "0.0.0.0","--port","8000" ]
+
+
+
