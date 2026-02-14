@@ -221,8 +221,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildChatScreen() {
     final messages = ref.watch(messageProvider);
-    final size = MediaQuery.of(context).size;
-
     return Column(
       children: [
         // Video
